@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f7fb">
+  <title>Поиск по документам</title>
+  <style>
+    :root { color-scheme: light; --ink:#162438; --muted:#68778d; --line:#e3eaf2; --blue:#315ee8; --blue-dark:#2449be; --paper:#fff; --bg:#f4f7fb; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:radial-gradient(ellipse at 15% 0%,#e7efff 0,transparent 34rem),var(--bg); color:var(--ink); font:15px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; }
+    .shell { width:min(100% - 32px,1050px); margin:0 auto; padding:46px 0 72px; }
+    header { display:flex; align-items:center; justify-content:space-between; gap:18px; margin-bottom:38px; }
+    .brand { display:flex; align-items:center; gap:12px; font-weight:750; letter-spacing:-.02em; }
+    .mark { display:grid; place-items:center; width:42px; height:42px; border-radius:14px; background:var(--blue); color:white; box-shadow:0 8px 18px #315ee833; font-size:20px; }
+    nav { display:flex; gap:10px; }
+    a { color:var(--blue); text-decoration:none; font-weight:650; }
+    .nav-link { padding:9px 13px; border:1px solid var(--line); border-radius:11px; background:#ffffffad; font-size:13px; }
+    .intro { max-width:710px; margin:0 0 26px; }
+    .eyebrow { color:var(--blue); font-size:12px; font-weight:750; letter-spacing:.11em; text-transform:uppercase; }
+    h1 { margin:8px 0 10px; font-size:clamp(30px,5vw,46px); line-height:1.08; letter-spacing:-.045em; }
+    .subtitle { color:var(--muted); font-size:16px; margin:0; }
+    .search-card { display:flex; gap:10px; padding:12px; background:var(--paper); border:1px solid var(--line); border-radius:19px; box-shadow:0 14px 42px #18365b0d; }
+    .search-input-wrap { position:relative; flex:1; }
+    .search-icon { position:absolute; left:15px; top:50%; transform:translateY(-50%); color:#8896aa; font-size:18px; }
+    input { width:100%; min-width:0; height:52px; border:0; outline:0; background:transparent; padding:0 16px 0 43px; color:var(--ink); font:inherit; font-size:16px; }
+    input::placeholder { color:#9aa6b6; }
+    button { border:0; border-radius:12px; padding:0 23px; background:var(--blue); color:#fff; font:inherit; font-weight:700; cursor:pointer; transition:.15s ease; }
+    button:hover { background:var(--blue-dark); transform:translateY(-1px); }
+    button:disabled { opacity:.6; cursor:wait; transform:none; }
+    .hint { color:var(--muted); font-size:13px; margin:12px 3px 0; }
+    .status-row { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:30px 2px 13px; color:var(--muted); font-size:13px; }
+    .result-list { display:grid; gap:12px; }
+    .result { background:var(--paper); border:1px solid var(--line); border-radius:17px; padding:20px 22px; box-shadow:0 6px 20px #18365b07; }
+    .result-top { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
+    .date { color:var(--muted); font-size:13px; font-weight:650; }
+    .doc-id { color:#8b98aa; font:12px ui-monospace,SFMono-Regular,Consolas,monospace; }
+    .text { margin:0; white-space:pre-wrap; overflow-wrap:anywhere; }
+    .rubrics { display:flex; flex-wrap:wrap; gap:7px; margin-top:15px; }
+    .tag { border:1px solid #e4eaff; border-radius:999px; background:#f4f6ff; color:#526aa9; padding:4px 9px; font-size:11px; }
+    .delete { padding:7px 10px; border:1px solid #f0d9dc; background:#fff8f8; border-radius:9px; color:#b54352; font-size:12px; }
+    .delete:hover { background:#ffeded; }
+    .empty { border:1px dashed #cbd6e5; border-radius:17px; padding:38px 20px; text-align:center; color:var(--muted); background:#ffffff80; }
+    .error { color:#b42335; }
+    footer { margin-top:26px; color:#8a97a8; font-size:12px; text-align:center; }
+    @media(max-width:620px) { .shell{width:min(100% - 22px,1050px);padding-top:25px} header{margin-bottom:29px} .brand{font-size:14px} .nav-link{padding:8px 9px;font-size:12px} .search-card{padding:8px;gap:5px} input{font-size:14px;padding-left:37px} button{padding:0 15px} .result{padding:17px} .status-row{align-items:flex-start;flex-direction:column} }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div class="brand"><span class="mark">⌕</span><span>Поиск по документам</span></div>
+      <nav><a class="nav-link" href="/docs" target="_blank" rel="noreferrer">API документация ↗</a></nav>
+    </header>
+    <section class="intro">
+      <div class="eyebrow">Текстовый поиск</div>
+      <h1>Найдите нужный документ</h1>
+      <p class="subtitle">Введите слово или фразу. Покажем до 20 совпадений, начиная с самых новых.</p>
+    </section>
+    <form class="search-card" id="search-form">
+      <div class="search-input-wrap"><span class="search-icon">⌕</span><input id="query" autocomplete="off" placeholder="Например, городская инфраструктура" aria-label="Поисковый запрос" required></div>
+      <button id="submit" type="submit">Найти документы</button>
+    </form>
+    <p class="hint">Поиск выполняется по тексту документа. Полные данные и рубрики загружаются из базы.</p>
+    <div class="status-row"><span id="status">Введите запрос, чтобы начать поиск.</span><span><a href="/openapi.json" target="_blank" rel="noreferrer">OpenAPI JSON</a></span></div>
+    <section class="result-list" id="results" aria-live="polite"></section>
+    <footer>FastAPI · Elasticsearch · SQLite</footer>
+  </main>
+  <script>
+    const form = document.querySelector('#search-form');
+    const queryField = document.querySelector('#query');
+    const submitButton = document.querySelector('#submit');
+    const statusLine = document.querySelector('#status');
+    const resultList = document.querySelector('#results');
+    const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char]));
+    const formatDate = value => new Intl.DateTimeFormat('ru-RU', {dateStyle:'medium', timeStyle:'short'}).format(new Date(value.replace(' ', 'T')));
+
+    function render(items) {
+      resultList.innerHTML = '';
+      if (!items.length) {
+        resultList.innerHTML = '<div class="empty">По этому запросу ничего не найдено. Попробуйте другое слово или формулировку.</div>';
+        return;
+      }
+      resultList.innerHTML = items.map(doc => `
+        <article class="result" data-id="${escapeHtml(doc.id)}">
+          <div class="result-top"><span class="date">${escapeHtml(formatDate(doc.created_date))}</span><span class="doc-id">${escapeHtml(doc.id)}</span></div>
+          <p class="text">${escapeHtml(doc.text)}</p>
+          <div class="rubrics">${doc.rubrics.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>
+          <div style="display:flex;justify-content:flex-end;margin-top:14px"><button class="delete" type="button" data-delete="${escapeHtml(doc.id)}">Удалить документ</button></div>
+        </article>`).join('');
+    }
+
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      const query = queryField.value.trim();
+      if (!query) return;
+      submitButton.disabled = true;
+      statusLine.classList.remove('error');
+      statusLine.textContent = 'Ищем документы…';
+      resultList.innerHTML = '';
+      try {
+        const response = await fetch('/api/v1/search', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({query})});
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || 'Не удалось выполнить поиск');
+        render(data.items);
+        statusLine.textContent = `Найдено документов: ${data.total}`;
+      } catch (error) {
+        statusLine.textContent = error.message;
+        statusLine.classList.add('error');
+      } finally { submitButton.disabled = false; }
+    });
+
+    resultList.addEventListener('click', async event => {
+      const button = event.target.closest('[data-delete]');
+      if (!button) return;
+      const id = button.dataset.delete;
+      button.disabled = true;
+      try {
+        const response = await fetch(`/api/v1/documents/${encodeURIComponent(id)}`, {method:'DELETE'});
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || 'Не удалось удалить документ');
+        button.closest('.result').remove();
+        const remaining = resultList.querySelectorAll('.result').length;
+        statusLine.textContent = `Документ ${id} удалён. Осталось результатов: ${remaining}`;
+        if (!remaining) resultList.innerHTML = '<div class="empty">Документ удалён. Выполните новый поиск, чтобы увидеть другие совпадения.</div>';
+      } catch (error) {
+        button.disabled = false;
+        statusLine.textContent = error.message;
+        statusLine.classList.add('error');
+      }
+    });
+  </script>
+</body>
+</html>
+
